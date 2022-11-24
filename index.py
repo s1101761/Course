@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    homepage = "<h1>顏偉森Python網頁</h1>"
+    homepage = "<h1>顏偉森Firestore資料庫存取</h1>"
     homepage += "<a href=/mis>MIS</a><br>"
     homepage += "<a href=/today>顯示日期時間</a><br>"
     homepage += "<a href=/welcome?nick=顏偉森>傳送使用者暱稱</a><br>"
@@ -23,6 +23,8 @@ def index():
     homepage += "<a href=/Interestwork>感興趣的工作網頁</a><br>"
     homepage += "<a href=/account>表單</a><br>"
     homepage += "<a href=/search>課程查詢</a><br><br>"
+    homepage += "<a href=/movie>讀取開眼電影即將上映影片，寫入Firestore</a><br><br>"
+    homepage += "<a href=/query>電影查詢</a><br><br>"
     return homepage
 
 @app.route("/mis")
@@ -93,6 +95,33 @@ def search():
     else:
         return render_template("search.html")
         
+        
+@app.route("/movie")
+def movie():
+    return render_template("movie.html")        
+        
+@app.route("/query", methods=["GET", "POST"])
+def query():
+    if request.method == "POST":
+        cond = request.form["query"]
+        result = "您輸入的片名關鍵字是：" + cond 
+
+        db = firestore.client()
+        collection_ref = db.collection("偉森的電影")
+        docs = collection_ref.get()
+
+        result = ""
+        for doc in docs:
+            dict = doc.to_dict()
+            if cond in dict["title"]:
+                result += "片名:<a href=" + dict["hyperlink"] + ">" + dict["title"] + "</a><br>電影分級:" + dict["rate"] + "<br><br>"
+        
+        if result =="":
+            result += "抱歉，查無相關條件的電影資訊"
+        return result
+        
+    else:
+        return render_template("query.html")
 
 if __name__ == "__main__":
     app.run()
